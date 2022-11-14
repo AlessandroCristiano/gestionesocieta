@@ -19,4 +19,6 @@ public interface SocietaService {
 	
 	public List<Societa> findByExample(Societa example);
 	
+	public List<Societa> cercaSocietaConDipendenteAventeRalMaggioreDi(int valore);
+	
 }

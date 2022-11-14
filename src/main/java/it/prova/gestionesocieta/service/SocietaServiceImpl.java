@@ -4,12 +4,14 @@ import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.persistence.TypedQuery;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import it.prova.gestionesocieta.exception.SocietaException;
 import it.prova.gestionesocieta.model.Dipendente;
 import it.prova.gestionesocieta.model.Societa;
 import it.prova.gestionesocieta.repository.SocietaRepository;
@@ -45,8 +47,10 @@ public class SocietaServiceImpl implements SocietaService{
 
 	@Transactional
 	public void rimuovi(Societa societaInstance) {
-		if(societaInstance.getDipendenti().size()==0) {
-			throw new RuntimeException("Errore: Questa società ha dei dipendenti");
+		TypedQuery<Societa>query=entityManager.createQuery("select s from Societa s join fetch s.dipendenti d where s.id = ?1", Societa.class);
+		query.setParameter(1, societaInstance.getId());
+		if(query.getResultList().size()!=0) {
+			throw new SocietaException("Errore: Questa società ha dei dipendenti");
 		}
 		societaRepository.delete(societaInstance);
 	}
@@ -60,9 +64,15 @@ public class SocietaServiceImpl implements SocietaService{
 		if (StringUtils.isNotEmpty(example.getIndirizzo()))
 			query += " and s.indirizzo like '%" + example.getIndirizzo() + "%' ";
 		if (example.getDataFondazione() != null)
-			query += " and s.dataFondazione >= " + example.getDataFondazione().getTime();
+			query += " and s.dataFondazione >= '" + example.getDataFondazione().toInstant() + "'";
 
 		return entityManager.createQuery(query, Societa.class).getResultList();
 	}
+
+	@Override
+	public List<Societa> cercaSocietaConDipendenteAventeRalMaggioreDi(int valore) {
+		return societaRepository.findAllDistinctByDipendenti_RedditoAnnuoLordoGreaterThan(valore);
+	}
+
 
 }
